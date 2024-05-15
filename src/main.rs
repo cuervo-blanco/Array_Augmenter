@@ -7,55 +7,84 @@ use std::io;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+enum AstronautPointer {
+    Astronaut(Rc<RefCell<Astronaut>>),
+    Hat(Rc<RefCell<Hat>>),
+}
+
+impl AstronautPointer {
+    fn clone_astro(&self) -> AstronautPointer {
+        match self {
+            AstronautPointer::Astronaut(astronaut) => {
+                AstronautPointer::Astronaut(astronaut.clone())
+            },
+            AstronautPointer::Hat(hat) => {
+                AstronautPointer::Hat(hat.clone())
+            }
+        }
+    }
+}
+
+struct Characters {
+    leader: AstronautPointer,
+}
+
 #[allow(dead_code)]
+struct Hat {
+    item: String,
+}
+
 struct Astronaut {
     name: String,
-    captain: bool,
-    prev: Option<Rc<RefCell<Astronaut>>>,
-    next: Option<Rc<RefCell<Astronaut>>>,
-}
-
-impl Astronaut{
-    fn new( name: String,
-            captain: bool,
-            _prev: Option<Rc<RefCell<Astronaut>>>,
-            _next: Option<Rc<RefCell<Astronaut>>>) -> Rc<RefCell<Self>> {
-                Rc::new(RefCell::new(Astronaut {
-                                                name,
-                                                captain,
-                                                prev: None,
-                                                next: None
-                                                }
-                                    )
-                        )
-            }
+    senior: AstronautPointer,
 }
 
 #[allow(dead_code)]
-fn add() -> Rc<RefCell<Astronaut>>{
+fn create_character_list() -> Characters {
     // Ask more information about what to add and then kick
     // other functions based on that.
     println!("Starting creation process...");
+
+    // Captain hat creation
+    let captain_hat: Rc<RefCell<Hat>> = Rc::new(RefCell::new(Hat { item: "Captain's Hat!".to_string()}));
+    //Characters list initiation process
+    let character_list: Characters = Characters{
+        leader: AstronautPointer::Hat(captain_hat),
+    };
+
+    character_list
+}
+
+fn create_character(list: &mut Characters) -> &mut Characters {
+    // Get User Input for name
     println!("Enter Austronaut name; try to be nice to him: ");
     let mut name: String = String::new();
     let _ = io::stdin().read_line(&mut name);
-    let captain_hat: Option<Rc<RefCell<Astronaut>>> = None;
-    let captain = Astronaut::new(
-        name.trim().to_string(),
-        true,
-        captain_hat,
-        None::<Rc<RefCell<Astronaut>>>
-    );
+    // Create Astronaut
+    let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut{
+        name: name.trim().to_string(),
+        senior: list.leader.clone_astro(),
+    }));
+    // Update list
+    list.leader =  AstronautPointer::Astronaut(astronaut.clone());
+
     {
-        let captain_ref = captain.borrow();
-        println!("Succesfully created Captain {}!", captain_ref.name);
+        let astronaut_ref = astronaut.borrow();
+        println!("Succesfully created Captain {}!", astronaut_ref.name);
+
+        match &astronaut_ref.senior {
+            AstronautPointer::Astronaut(senior) => {
+                println!("Leader: {:?}", senior.borrow().name);
+            },
+            _ => println!("No other astronaut"),
+        }
     }
-    captain
+    list
 }
 
 #[allow(dead_code)]
 enum OptionSelector {
-    Option1,
+    Characters,
     Option2,
     Option3
 }
@@ -67,13 +96,34 @@ struct TerminalOption {
 
 #[allow(dead_code)]
 impl TerminalOption{
-    fn execute(&self) {
+    fn present(&self) -> String {
         match self.func {
-            OptionSelector::Option1 => {
+            OptionSelector::Characters => {
                 // Should output the first structure in an array (which is the option)
                 // The option then
-                println!("You selected option 1");
-                add();
+                let option_title: String = String::from("1. Create characters");
+                option_title
+            },
+            OptionSelector::Option2 => {
+                // Should output the first structure in an array (which is the option)
+                // The option then
+                let option_title: String = String::from("2. Empty");
+                option_title
+            },
+            _ => {
+                let option_title: String = String::from("3. Empty");
+                option_title
+            }
+
+    }
+}
+    fn execute(&self) {
+        match self.func {
+            OptionSelector::Characters => {
+                // Should output the first structure in an array (which is the option)
+                // The option then
+                let mut character_list = create_character_list();
+                create_character(&mut character_list);
             },
             OptionSelector::Option2 => {
                 // Should output the first structure in an array (which is the option)
@@ -89,9 +139,9 @@ impl TerminalOption{
 
 fn main() {
     // Options
-   let option1 = TerminalOption {
+   let characters = TerminalOption {
         id: 1,
-        func: OptionSelector::Option1,
+        func: OptionSelector::Characters,
     };
 
     let option2 = TerminalOption {
@@ -104,7 +154,7 @@ fn main() {
         func: OptionSelector::Option3
     };
 
-    let options: Vec<TerminalOption> = vec![option1, option2, option3];
+    let options: Vec<TerminalOption> = vec![characters, option2, option3];
     // Astronaut linked-list
 
 
@@ -113,6 +163,9 @@ fn main() {
 
     loop {
         println!("Select an Option");
+        println!("{}", options[0].present());
+        println!("{}", options[1].present());
+        println!("{}", options[2].present());
 
         io::stdin().read_line(&mut selection).expect("Failed to read line");
 
