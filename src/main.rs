@@ -1,4 +1,3 @@
-//I want to be able to add names to an array through linked lists
 // That can also work like a stack with a pop and push capabilities
 // which we will call differently.
 // we must also perform search of that array to find a particular name
@@ -8,29 +7,77 @@ use std::ptr::addr_of;
 use std::io;
 use std::rc::Rc;
 
+#[derive(Debug)]
+#[allow(dead_code)]
 struct Hat {
     name: String,
 }
+#[derive(Debug)]
+#[derive(Clone)]
 struct Astronauts {
-    leader: AstronautPointer,
+    senior: Leader,
 }
+#[allow(dead_code)]
+impl Astronauts {
+    fn push(&mut self, name: String) {
+        let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut {
+            name: name.trim().to_string(),
+            senior: self.senior.clone_astro(),
+        }));
+        self.senior = Leader::Astronaut(astronaut.clone());
+    }
+    fn pop(&mut self) -> Option<String> {
+        let senior = match &self.senior {
+            Leader::Astronaut(astronaut) => astronaut.borrow().senior.clone_astro(),
+            _ => return None,
+        };
+        self.senior = senior;
+        match &self.senior {
+            Leader::Astronaut(astronaut) => Some(astronaut.borrow().name.clone()),
+            _ => None,
+        }
+    }
+    fn print_recursive(leader: &Leader) {
+        match leader {
+            Leader::Astronaut(astronaut_rc) => {
+                let astronaut = astronaut_rc.borrow();
+                println!("My name is {}", astronaut.name);
+                Astronauts::print_recursive(&astronaut.senior);
+            }
+            Leader::Hat(har_rc) => {
+                let hat = har_rc.borrow();
+                println!("Reached leader hat: {}", hat.name);
+            }
+            Leader::None => {
+                println!("No leader found");
+            }
+        }
+    }
+    fn print_name(&self) {
+        Astronauts::print_recursive(&self.senior);
+    }
+}
+#[derive(Debug)]
 struct Astronaut {
     name: String,
-    senior: AstronautPointer,
+    senior: Leader
 }
-enum AstronautPointer {
+#[allow(dead_code)]
+#[derive(Debug)]
+#[derive(Clone)]
+enum Leader {
     Astronaut(Rc<RefCell<Astronaut>>),
     Hat(Rc<RefCell<Hat>>),
     None,
 }
-impl AstronautPointer {
-    fn clone_astro(&self) -> AstronautPointer {
+impl Leader {
+    fn clone_astro(&self) -> Leader {
         match self {
-            AstronautPointer::Astronaut(astronaut) => {
-                AstronautPointer::Astronaut(astronaut.clone())
+            Leader::Astronaut(astronaut) => {
+                Leader::Astronaut(astronaut.clone())
             }
-            AstronautPointer::Hat(hat) => AstronautPointer::Hat(hat.clone()),
-            AstronautPointer::None => AstronautPointer::None,
+            Leader::Hat(hat) => Leader::Hat(hat.clone()),
+            Leader::None => Leader::None,
         }
     }
 }
@@ -45,45 +92,19 @@ fn create_astronaut_list() -> Astronauts {
     }));
     //Astronauts list initiation process
     let astronaut_list: Astronauts = Astronauts {
-        leader: AstronautPointer::Hat(captain_hat),
+        senior: Leader::Hat(captain_hat),
     };
 
     astronaut_list
 }
-
-// Create Astronaut
-fn create_astronaut(list: &mut Astronauts) {
-    // Get User Input for name
-    println!("Enter Austronaut name; try to be nice to him: ");
-    let mut name: String = String::new();
-    let _ = io::stdin().read_line(&mut name);
-    // Create Astronaut
-    let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut {
-        name: name.trim().to_string(),
-        senior: list.leader.clone_astro(),
-    }));
-    // Update list
-    list.leader = AstronautPointer::Astronaut(astronaut.clone());
-
-    {
-        let astronaut_ref = astronaut.borrow();
-        println!("Succesfully created Captain {}!", astronaut_ref.name);
-
-        match &astronaut_ref.senior {
-            AstronautPointer::Astronaut(senior) => {
-                println!("Leader: {:?}", senior.borrow().name);
-            }
-            _ => println!("No other astronaut"),
-        }
-    }
-}
-
 #[allow(dead_code)]
 enum OptionSelector {
     Option1,
     Option2,
     Option3,
 }
+#[allow(dead_code)]
+#[derive(Debug)]
 enum GameObjects {
     AstronautList(Astronauts),
 }
@@ -121,8 +142,24 @@ impl TerminalOption {
             OptionSelector::Option1 => {
                 // Should output the first structure in an array (which is the option)
                 // The option then
-                let mut astronaut_list: Astronauts = create_astronaut_list();
-                create_astronaut(&mut astronaut_list);
+                let mut astronaut_list: Astronauts;
+
+                #[allow(irrefutable_let_patterns)]
+                if let Some(ref boxed_game_objects) = self.list {
+                    if let GameObjects::AstronautList(ref existing_list) = **boxed_game_objects {
+                        astronaut_list = existing_list.clone();
+                    } else {
+                        astronaut_list = create_astronaut_list();
+                    }
+                } else {
+                    astronaut_list = create_astronaut_list();
+                }
+
+                println!("Enter Austronaut name; try to be nice to him: ");
+                let mut name: String = String::new();
+                let _ = io::stdin().read_line(&mut name);
+                astronaut_list.push(name);
+                astronaut_list.print_name();
                 Some(Box::new(GameObjects::AstronautList(astronaut_list)))
             }
             OptionSelector::Option2 => {
@@ -164,31 +201,42 @@ fn main() {
     // Astronaut linked-list
 
     // Selection algorithm
-    let mut selection = String::new();
     loop {
+
+        unsafe {
+            println!("Current list: {:?}", ASTRONAUT_LIST.list);
+        }
         println!("Select an Option");
         println!("{}", options[0].present());
         println!("{}", options[1].present());
         println!("{}", options[2].present());
 
+        let mut selection = String::new();
         io::stdin()
             .read_line(&mut selection)
             .expect("Failed to read line");
 
-        let selection: u32 = selection.trim().parse().expect("Not a number");
+        let selection = selection.trim();
 
-        println!("You selected {}", selection);
+        if let Ok(selection_num) = selection.parse::<u32>() {
 
-        match selection {
-            1..=3 => {
-                let n = (selection - 1) as usize;
-                unsafe{
-                    ASTRONAUT_LIST.list = options[n].execute();
+            println!("You selected {}", selection);
+
+            match selection_num {
+                1 => {
+                    let n = (selection_num - 1) as usize;
+                    unsafe{
+                        ASTRONAUT_LIST.list = options[n].execute();
+                    }
+                }
+                _ => {
+                    println!("Not a valid option")
                 }
             }
-            _ => {
-                println!("Not a valid option")
-            }
+        } else {
+            println!("Not a number: {:?}", selection);
         }
+
     }
+
 }
