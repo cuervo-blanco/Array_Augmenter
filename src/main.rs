@@ -21,19 +21,19 @@ struct Astronauts {
 }
 #[allow(dead_code)]
 impl Astronauts {
-    fn push(&mut self, name: String) {
+    fn push(&mut self, name: String, skills: Vec<(String, i8)>) {
         let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut {
             name: name.trim().to_string(),
             life: 10.0,
             skill: Skills::None,
             // B.R.I.G.H.T.S.
-            brainpower: 0,
-            reflex: 0,
-            influence: 0,
-            good_fortune: 0,
-            heart: 0,
-            toughness: 0,
-            sight: 0,
+            brainpower: skills[0].1,
+            reflex: skills[1].1,
+            influence: skills[2].1,
+            good_fortune: skills[3].1,
+            heart: skills[4].1,
+            toughness: skills[5].1,
+            sight: skills[6].1,
 
             senior: self.senior.clone_astro(),
         }));
@@ -58,8 +58,8 @@ impl Astronauts {
                 Astronauts::print_recursive(&astronaut.senior);
             }
             Leader::Hat(har_rc) => {
-                let hat = har_rc.borrow();
-                println!("Reached leader hat: {}", hat.name);
+                let _hat = har_rc.borrow();
+                println!("");
             }
             Leader::None => {
                 println!("No leader found");
@@ -78,13 +78,13 @@ struct Astronaut {
     life: f32,
     skill: Skills,
     // B.R.I.G.H.T.S.
-    brainpower: u8,
-    reflex: u8,
-    influence: u8,
-    good_fortune: u8,
-    heart: u8,
-    toughness: u8,
-    sight: u8,
+    brainpower: i8,
+    reflex: i8,
+    influence: i8,
+    good_fortune: i8,
+    heart: i8,
+    toughness: i8,
+    sight: i8,
 // Pointer
     senior: Leader
 }
@@ -139,6 +139,8 @@ fn create_astronaut_list() -> Astronauts {
     // Ask more information about what to add and then kick
     // other functions based on that.
     println!("Starting creation process...");
+    thread::sleep(Duration::from_millis(1000));
+    println!("");
 
     // Captain hat creation
     let captain_hat: Rc<RefCell<Hat>> = Rc::new(RefCell::new(Hat {
@@ -209,10 +211,11 @@ impl TerminalOption {
                     astronaut_list = create_astronaut_list();
                 }
 
-                println!("Enter Austronaut name; try to be nice to him: ");
+                println!("Enter Austronaut name: ");
                 let mut name: String = String::new();
                 let _ = io::stdin().read_line(&mut name);
-                astronaut_list.push(name);
+                let character_skills = character_skills();
+                astronaut_list.push(name, character_skills);
                 astronaut_list.print_name();
                 Some(Box::new(GameObjects::AstronautList(astronaut_list)))
             }
@@ -248,9 +251,28 @@ const OPTION_3: TerminalOption = TerminalOption {
     list: None,
 };
 
-fn character_skills() -> Vec<(String, u8)> {
+#[allow(dead_code)]
+fn print_help() {
+    let help_text = "
+*** Welcome to the Astronaut Creation Station! ***
+Ready to power up your character? You've got 30 points to distribute across 7 skills:
 
-    let mut skills: Vec<(String, u8)> = vec![
+- **Brainpower (Intellect)**: Boost your hacking and puzzle-solving abilities!
+- **Reflex (Agility)**: Crank up your speed and dodging skills!
+- **Influence (Charisma)**: Amp up your charisma to persuade and charm!
+- **Good Fortune (Luck)**: Increase your luck for better outcomes and rare finds!
+- **Heart (Strength)**: Pump up your physical strength for heavy lifting and endurance!
+- **Toughness (Endurance)**: Enhance your resistance to damage and fatigue!
+- **Sight (Perception)**: Sharpen your awareness to spot hidden treasures and dangers!
+
+Remember, you've got a total of 30 points. Spend them wisely and get ready to level up!
+";
+    println!("{}", help_text);
+}
+
+fn character_skills() -> Vec<(String, i8)> {
+
+    let mut skills: Vec<(String, i8)> = vec![
         ("Brain Power".to_string(), 0),
         ("Reflex".to_string(), 0),
         ("Influence".to_string(), 0),
@@ -259,12 +281,12 @@ fn character_skills() -> Vec<(String, u8)> {
         ("Toughness".to_string(), 0),
         ("Sight".to_string(), 0)];
 
-    let mut total_points: u8 = 30;
+    let mut total_points: i8 = 30;
 
     let mut input = String::new();
 
     println!("Astronaut creation process initializing...");
-    thread::sleep(Duration::from_millis(3000));
+    thread::sleep(Duration::from_millis(1000));
     println!("B.R.I.G.H.T.S. successfuly intialized");
     thread::sleep(Duration::from_millis(1000));
     loop {
@@ -290,16 +312,19 @@ fn character_skills() -> Vec<(String, u8)> {
             if choice == 0 {
                 break;
             } else if choice > 0 && choice <= 7 {
-                let skill_index = choice - 1;
-                println!("Enter new value for {}: ", skills[skill_index][0]);
+                let skill_index = (choice - 1) as usize;
+                println!("Enter new value for {}: ", skills[skill_index].0);
                 input.clear();
                 std::io::stdin().read_line(&mut input).expect("Failed ot read input");
-                let new_value: u8 = match input.trim().parse() {
+                let new_value: i8 = match input.trim().parse() {
                     Ok(num) => num,
                     Err(_) => continue,
                 };
 
-                if new_value <= total_points {
+                if new_value > 10 {
+                    println!("Maximum 10 points per skill.");
+                    thread::sleep(Duration::from_millis(2000));
+                } else if new_value <= total_points {
                     total_points -= new_value - skills[skill_index].1;
                     skills[skill_index].1 = new_value;
                 } else {
@@ -308,27 +333,9 @@ fn character_skills() -> Vec<(String, u8)> {
             }
         }
     }
-
     skills
 }
 
-fn print_help() {
-    let help_text = "
-    *** Welcome to the Astronaut Creation Station! ***
-    Ready to power up your character? You've got 30 points to distribute across 7 skills:
-
-    - **Brainpower (Intellect)**: Boost your hacking and puzzle-solving abilities!
-    - **Reflex (Agility)**: Crank up your speed and dodging skills!
-    - **Influence (Charisma)**: Amp up your charisma to persuade and charm!
-    - **Good Fortune (Luck)**: Increase your luck for better outcomes and rare finds!
-    - **Heart (Strength)**: Pump up your physical strength for heavy lifting and endurance!
-    - **Toughness (Endurance)**: Enhance your resistance to damage and fatigue!
-    - **Sight (Perception)**: Sharpen your awareness to spot hidden treasures and dangers!
-
-    Remember, you've got a total of 30 points. Spend them wisely and get ready to level up!
-    ";
-    println!("{}", help_text);
-}
 
 fn main() {
     // Options
