@@ -1,8 +1,10 @@
-// That can also work like a stack with a pop and push capabilities
+// that can also work like a stack with a pop and push capabilities
 // which we will call differently.
 // we must also perform search of that array to find a particular name
 
 use std::cell::RefCell;
+use std::thread;
+use core::time::Duration;
 use std::ptr::addr_of;
 use std::io;
 use std::rc::Rc;
@@ -22,6 +24,17 @@ impl Astronauts {
     fn push(&mut self, name: String) {
         let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut {
             name: name.trim().to_string(),
+            life: 10.0,
+            skill: Skills::None,
+            // B.R.I.G.H.T.S.
+            brainpower: 0,
+            reflex: 0,
+            influence: 0,
+            good_fortune: 0,
+            heart: 0,
+            toughness: 0,
+            sight: 0,
+
             senior: self.senior.clone_astro(),
         }));
         self.senior = Leader::Astronaut(astronaut.clone());
@@ -58,10 +71,51 @@ impl Astronauts {
     }
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 struct Astronaut {
+    // Characteristics
     name: String,
+    life: f32,
+    skill: Skills,
+    // B.R.I.G.H.T.S.
+    brainpower: u8,
+    reflex: u8,
+    influence: u8,
+    good_fortune: u8,
+    heart: u8,
+    toughness: u8,
+    sight: u8,
+// Pointer
     senior: Leader
 }
+
+#[derive(Debug)]
+#[allow(dead_code)]
+enum Skills {
+    ComputerNerd,
+    Medic,
+    Negotiator,
+    Pilot,
+    Scientist,
+    Hacker,
+    Survavilist,
+    Leader,
+    Strategist,
+    Mechanic,
+    Biologist,
+    Navigator,
+    CommunicationsSpecialist,
+    Technician,
+    SecurityExpert,
+    Chemist,
+    Astrophysicist,
+    Psychologist,
+    Trader,
+    Engineer,
+    Soldier,
+    None
+}
+
 #[allow(dead_code)]
 #[derive(Debug)]
 #[derive(Clone)]
@@ -122,7 +176,7 @@ impl TerminalOption {
             OptionSelector::Option1 => {
                 // Should output the first structure in an array (which is the option)
                 // The option then
-                let option_title: String = String::from("1. Create astronauts");
+                let option_title: String = String::from("1. Create Astronaut");
                 option_title
             }
             OptionSelector::Option2 => {
@@ -194,6 +248,88 @@ const OPTION_3: TerminalOption = TerminalOption {
     list: None,
 };
 
+fn character_skills() -> Vec<(String, u8)> {
+
+    let mut skills: Vec<(String, u8)> = vec![
+        ("Brain Power".to_string(), 0),
+        ("Reflex".to_string(), 0),
+        ("Influence".to_string(), 0),
+        ("Good Fortune".to_string(), 0),
+        ("Heart".to_string(), 0),
+        ("Toughness".to_string(), 0),
+        ("Sight".to_string(), 0)];
+
+    let mut total_points: u8 = 30;
+
+    let mut input = String::new();
+
+    println!("Astronaut creation process initializing...");
+    thread::sleep(Duration::from_millis(3000));
+    println!("B.R.I.G.H.T.S. successfuly intialized");
+    thread::sleep(Duration::from_millis(1000));
+    loop {
+        println!("Type HELP for help.");
+        println!("");
+        println!("Total points left: {}", total_points);
+        for (i, (name, value)) in skills.iter().enumerate() {
+            println!("{}. {}: {}", i+1, name, value);
+        }
+        println!("");
+
+        println!("Enter the parameter number to change (0 to finish): ");
+        input.clear();
+        std::io::stdin().read_line(&mut input).expect("Failed to read input");
+
+        if input.trim().to_uppercase() == "HELP" {
+            print_help();
+        } else {
+            let choice: u8 = match input.trim().parse() {
+                Ok(num) => num,
+                Err(_) => continue,
+            };
+            if choice == 0 {
+                break;
+            } else if choice > 0 && choice <= 7 {
+                let skill_index = choice - 1;
+                println!("Enter new value for {}: ", skills[skill_index][0]);
+                input.clear();
+                std::io::stdin().read_line(&mut input).expect("Failed ot read input");
+                let new_value: u8 = match input.trim().parse() {
+                    Ok(num) => num,
+                    Err(_) => continue,
+                };
+
+                if new_value <= total_points {
+                    total_points -= new_value - skills[skill_index].1;
+                    skills[skill_index].1 = new_value;
+                } else {
+                    println!("Not enough points.");
+                }
+            }
+        }
+    }
+
+    skills
+}
+
+fn print_help() {
+    let help_text = "
+    *** Welcome to the Astronaut Creation Station! ***
+    Ready to power up your character? You've got 30 points to distribute across 7 skills:
+
+    - **Brainpower (Intellect)**: Boost your hacking and puzzle-solving abilities!
+    - **Reflex (Agility)**: Crank up your speed and dodging skills!
+    - **Influence (Charisma)**: Amp up your charisma to persuade and charm!
+    - **Good Fortune (Luck)**: Increase your luck for better outcomes and rare finds!
+    - **Heart (Strength)**: Pump up your physical strength for heavy lifting and endurance!
+    - **Toughness (Endurance)**: Enhance your resistance to damage and fatigue!
+    - **Sight (Perception)**: Sharpen your awareness to spot hidden treasures and dangers!
+
+    Remember, you've got a total of 30 points. Spend them wisely and get ready to level up!
+    ";
+    println!("{}", help_text);
+}
+
 fn main() {
     // Options
 
@@ -203,9 +339,6 @@ fn main() {
     // Selection algorithm
     loop {
 
-        unsafe {
-            println!("Current list: {:?}", ASTRONAUT_LIST.list);
-        }
         println!("Select an Option");
         println!("{}", options[0].present());
         println!("{}", options[1].present());
