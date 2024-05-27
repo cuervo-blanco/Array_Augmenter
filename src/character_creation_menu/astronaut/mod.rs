@@ -3,12 +3,12 @@ use std::cell::RefCell;
 
 #[derive(Debug)]
 #[allow(dead_code)]
-struct Hat {
+pub struct Hat {
     name: String,
 }
 #[derive(Debug)]
 #[derive(Clone)]
-struct Astronauts {
+pub struct Astronauts {
     senior: Leader,
 }
 impl Astronauts {
@@ -76,7 +76,7 @@ impl Astronauts {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-struct Astronaut {
+pub struct Astronaut {
     // Characteristics
     name: String,
     life: f32,
