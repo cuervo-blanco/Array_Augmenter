@@ -105,6 +105,15 @@ struct Astronaut {
 // Pointer
     senior: Leader
 }
+#[allow(dead_code)]
+impl Astronaut {
+    fn heal(&mut self, amount: f32) {
+        self.life += amount;
+    }
+    fn hurt(&mut self, amount: f32) {
+        self.life -= amount;
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Position {
