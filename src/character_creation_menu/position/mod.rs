@@ -1,6 +1,13 @@
+use std::fmt;
+use std::thread;
+use core::time::Duration;
+// External Crates
+use once_cell::sync::Lazy;
+
+use crate::character_creation_menu::utils;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum Position {
+pub enum Position {
     Captain,
     FirstOfficer,
     Communications,
@@ -26,7 +33,7 @@ static mut POSITIONS: Lazy<Vec<Position>> = Lazy::new(|| vec![Position::Captain,
     Position::Engineer
 ]);
 
-fn character_position() -> Position {
+pub fn astronaut_position() -> Position {
 
     let mut input = String::new();
 
@@ -45,7 +52,7 @@ fn character_position() -> Position {
         std::io::stdin().read_line(&mut input).expect("Failed to read input");
 
         if input.trim().to_uppercase() == "HELP" {
-            print_help(3);
+            utils::print_help(3);
         } else {
             let choice: u8 = match input.trim().parse::<u8>() {
                 Ok(num) => num - 1,

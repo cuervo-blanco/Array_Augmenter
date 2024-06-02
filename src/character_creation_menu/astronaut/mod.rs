@@ -1,4 +1,13 @@
-// use std::cell::RefCell;
+use std::cell::RefCell;
+use std::thread;
+use std::rc::Rc;
+use core::time::Duration;
+
+use crate::character_creation_menu::utils;
+use crate::character_creation_menu::leader;
+use crate::character_creation_menu::leader::Leader;
+use crate::character_creation_menu::skills::Skills;
+use crate::character_creation_menu::position::Position;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -11,7 +20,7 @@ pub struct Astronauts {
     senior: Leader,
 }
 impl Astronauts {
-    fn push(&mut self, name: String, attributes: Vec<(String, i8)>, skill: Skills, position: Position) {
+    pub fn push(&mut self, name: String, attributes: Vec<(String, i8)>, skill: Skills, position: Position) {
         let astronaut: Rc<RefCell<Astronaut>> = Rc::new(RefCell::new(Astronaut {
             name: name.trim().to_string(),
             life: 10.0,
@@ -28,8 +37,9 @@ impl Astronauts {
             // Pointer
             senior: self.senior.clone_astro(),
         }));
-        self.senior = Leader::Astronaut(astronaut.clone());
+        self.senior = leader::Leader::Astronaut(astronaut.clone());
     }
+    #[allow(dead_code)]
     fn pop(&mut self) -> Option<String> {
         let senior = match &self.senior {
             Leader::Astronaut(astronaut) => astronaut.borrow().senior.clone_astro(),
@@ -68,7 +78,7 @@ impl Astronauts {
             }
         }
     }
-    fn print_name(&self) {
+    pub fn print_name(&self) {
         Astronauts::print_recursive(&self.senior);
     }
 }
@@ -102,7 +112,7 @@ impl Astronaut {
     }
 }
 
-fn create_astronaut_list() -> Astronauts {
+pub fn create_astronaut_list() -> Astronauts {
     // Ask more information about what to add and then kick
     println!("Starting creation process...");
     thread::sleep(Duration::from_millis(1000));
@@ -122,7 +132,7 @@ fn create_astronaut_list() -> Astronauts {
 
 
 
-fn character_attributes() -> Vec<(String, i8)> {
+pub fn astronaut_attributes() -> Vec<(String, i8)> {
 
     let mut attributes: Vec<(String, i8)> = vec![
         ("Brain Power".to_string(), 0),
@@ -155,7 +165,7 @@ fn character_attributes() -> Vec<(String, i8)> {
         std::io::stdin().read_line(&mut input).expect("Failed to read input");
 
         if input.trim().to_uppercase() == "HELP" {
-            print_help(1);
+            utils::print_help(1);
         } else {
             let choice: u8 = match input.trim().parse() {
                 Ok(num) => num,
@@ -187,3 +197,5 @@ fn character_attributes() -> Vec<(String, i8)> {
     }
     attributes
 }
+
+

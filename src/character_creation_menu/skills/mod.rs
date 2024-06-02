@@ -1,7 +1,12 @@
+use std::fmt;
+use std::thread;
+use core::time::Duration;
+
+use crate::character_creation_menu::utils;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
-enum Skills {
+pub enum Skills {
     ComputerNerd,
     Medic,
     Negotiator,
@@ -55,7 +60,7 @@ impl fmt::Display for Skills {
     }
 }
 
-fn character_skills() -> Skills {
+pub fn astronaut_skills() -> Skills {
     loop {
         let skills: Vec<Skills> = vec![
             Skills::ComputerNerd,
@@ -95,7 +100,7 @@ fn character_skills() -> Skills {
         std::io::stdin().read_line(&mut input).expect("Failed to read input");
 
         if input.trim().to_uppercase() == "HELP" {
-            print_help(2);
+            utils::print_help(2);
         } else {
             let choice: u8 = match input.trim().parse::<u8>() {
                 Ok(num) => num - 1,

@@ -1,6 +1,6 @@
 
 #[allow(dead_code)]
-fn print_help(menu: u8) {
+pub fn print_help(menu: u8) {
     let help_text: &str;
     match menu {
         1  => {

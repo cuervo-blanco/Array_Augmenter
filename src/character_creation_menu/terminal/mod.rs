@@ -1,3 +1,12 @@
+use std::ptr::addr_of;
+use std::io;
+
+//Internal Crates
+use crate::character_creation_menu::astronaut;
+use crate::character_creation_menu::astronaut::Astronauts;
+use crate::character_creation_menu::skills;
+use crate::character_creation_menu::position;
+
 #[allow(dead_code)]
 enum OptionSelector {
     Option1,
@@ -43,23 +52,23 @@ impl TerminalOption {
             OptionSelector::Option1 => {
                 // Should output the first structure in an array (which is the option)
                 // The option then
-                let mut astronaut_list: Astronauts;
+                let mut astronaut_list: astronaut::Astronauts;
                 #[allow(irrefutable_let_patterns)]
                 if let Some(ref boxed_game_objects) = self.list {
                     if let GameObjects::AstronautList(ref existing_list) = **boxed_game_objects {
                         astronaut_list = existing_list.clone();
                     } else {
-                        astronaut_list = create_astronaut_list();
+                        astronaut_list = astronaut::create_astronaut_list();
                     }
                 } else {
-                    astronaut_list = create_astronaut_list();
+                    astronaut_list = astronaut::create_astronaut_list();
                 }
                 println!("Enter Austronaut name: ");
                 let mut name: String = String::new();
                 let _ = io::stdin().read_line(&mut name);
-                let attributes = character_attributes();
-                let skills = character_skills();
-                let position = character_position();
+                let attributes = astronaut::astronaut_attributes();
+                let skills = skills::astronaut_skills();
+                let position = position::astronaut_position();
                 astronaut_list.push(name, attributes, skills, position);
                 println!("Crew Members so far: ");
                 astronaut_list.print_name();
@@ -108,7 +117,7 @@ const OPTION_3: TerminalOption = TerminalOption {
     list: None,
 };
 
-fn terminal() {
+pub fn terminal() {
     // Options
 
     let options: Vec<&TerminalOption> = vec![unsafe { &*addr_of!(ASTRONAUT_LIST) } , &OPTION_2, &OPTION_3];
